@@ -12,20 +12,22 @@ class WebUsuarioAuth
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::guard('web_usuario')->check()) {
-            // Si es una petición AJAX
+            // AJAX (agregar al carrito, favoritos): después del login vuelve a la página donde estaba
             if ($request->expectsJson()) {
+                session(['intended_url' => url()->previous()]);
+                session()->flash('aviso_login', 'Iniciá sesión o creá tu cuenta para comprar.');
+
                 return response()->json([
                     'success' => false,
                     'message' => 'No autenticado',
-                    'redirect' => route('home')
+                    'redirect' => route('web.cuenta')
                 ], 401);
             }
-            
-            // Guardar la URL a la que intentaba acceder
-            session(['intended_url' => $request->url()]);
-            
-            // Redirigir al home con parámetro para abrir modal
-            return redirect()->route('home')->with('open_login_modal', true);
+
+            // Guardar la URL a la que intentaba acceder y mandarlo a "Mi cuenta" (login + registro)
+            session(['intended_url' => $request->fullUrl()]);
+
+            return redirect()->route('web.cuenta')->with('aviso_login', 'Iniciá sesión o creá tu cuenta para comprar.');
         }
 
         return $next($request);

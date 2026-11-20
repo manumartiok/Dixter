@@ -12,7 +12,11 @@ use App\Http\Controllers\HomeBannerController;
 use App\Http\Controllers\NosotroController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\ProductoController;
-use App\Http\Controllers\ProductoBusquedaController;
+use App\Http\Controllers\CatalogoController;
+use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\CompraController;
+use App\Http\Controllers\MercadoPagoController;
+use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\NovedadeController;
 use App\Http\Controllers\ContactoController;
 
@@ -20,18 +24,16 @@ use App\Http\Controllers\WebUsuarioController;
 use App\Http\Controllers\ListaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\InfoController;
-use App\Http\Controllers\InfoPagoController;
-use App\Models\Marca;
-use App\Models\Producto;
-use App\Models\Banner;
 use App\Http\Controllers\BannerController;
 
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\LogoController;
-use App\Http\Controllers\RedController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\AreaClientesController;
 use App\Http\Controllers\MetadatoController;
 use App\Http\Controllers\FormController;
+use App\Http\Controllers\InstitucionalController;
 
 //ADMIN
 Route::middleware(AdminAuth::class)->group(function () {
@@ -62,6 +64,9 @@ Route::middleware(AdminAuth::class)->group(function () {
     Route::get('/admin/nosotros', [NosotroController::class, 'show'])->name('adm.nosotros');
     Route::post('/admin/nosotros/update', [NosotroController::class,'update'])->name('adm.nosotros-update');
 
+    // nuestra red: título de la página (los distribuidores están en routes/modulos.php)
+    Route::post('/admin/distribuidore/encabezado', [\App\Http\Controllers\DistribuidoreController::class, 'encabezado'])->name('adm.distribuidore-encabezado');
+
      // marcas
 
     Route::get('/admin/marca', [MarcaController::class, 'index'])->name('adm.marca');
@@ -73,6 +78,13 @@ Route::middleware(AdminAuth::class)->group(function () {
     Route::get('/admin/marca/switch/{marca_id}', [MarcaController::class, 'switch'])->name('adm.marca-switch');
     Route::get('/admin/marca/destacado/{marca_id}', [MarcaController::class, 'destacado'])->name('adm.marca-destacado');
     Route::post('/admin/marca/reordenar', [MarcaController::class, 'reordenar'])->name('adm.marca-reordenar');
+
+    // categorías del catálogo (árbol de hasta 3 niveles)
+    Route::get('/admin/categorias', [CategoriaController::class, 'index'])->name('adm.categorias');
+    Route::post('/admin/categorias/store', [CategoriaController::class, 'store'])->name('adm.categorias-store');
+    Route::post('/admin/categorias/update/{id}', [CategoriaController::class, 'update'])->name('adm.categorias-update');
+    Route::post('/admin/categorias/destroy/{id}', [CategoriaController::class, 'destroy'])->name('adm.categorias-destroy');
+    Route::get('/admin/categorias/switch/{id}', [CategoriaController::class, 'switch'])->name('adm.categorias-switch');
 
     // productos
     Route::get('/admin/producto', [ProductoController::class, 'index'])->name('adm.producto');
@@ -87,6 +99,11 @@ Route::middleware(AdminAuth::class)->group(function () {
     Route::post('/admin/producto/import', [ProductoController::class, 'import'])->name('adm.producto-import');
     Route::post('/admin/producto/fotos-masivas', [ProductoController::class, 'fotosMasivas'])->name('adm.producto-fotos-masivas');
     Route::post('/admin/producto/reordenar', [ProductoController::class, 'reordenar'])->name('adm.producto-reordenar');
+    // galería de fotos del producto (el editor ya las usaba pero no estaban registradas)
+    Route::post('/admin/producto/fotos/store', [ProductoController::class, 'fotosStore'])->name('adm.producto-fotos-store');
+    Route::post('/admin/producto/fotos/reordenar', [ProductoController::class, 'fotosReordenar'])->name('adm.producto-fotos-reordenar');
+    Route::get('/admin/producto/fotos/destroy/{foto_id}', [ProductoController::class, 'fotosDestroy'])->name('adm.producto-fotos-destroy');
+    Route::get('/admin/producto/fotos/switch/{foto_id}', [ProductoController::class, 'fotosSwitch'])->name('adm.producto-fotos-switch');
 
     //novedades
     Route::get('/admin/novedade', [NovedadeController::class, 'index'])->name('adm.novedade');
@@ -152,7 +169,7 @@ Route::middleware(AdminAuth::class)->group(function () {
     Route::get('/admin/pedidos/editor/{pedido}', [PedidoController::class, 'adminShow'])->name('adm.pedidos-historico-editor');
     Route::post('/admin/pedidos/update', [PedidoController::class, 'adminUpdate'])->name('adm.pedidos-historico-update');
     Route::get('/admin/pedidos/destroy/{pedido}', [PedidoController::class, 'adminDestroy'])->name('adm.pedidos-historico-destroy');
-    Route::get('/admin/pedidos/switch/{pedido}', [PedidoController::class, 'adminSwitch'])->name('adm.pedidos-historico-switch');
+    Route::post('/admin/pedidos/estado/{pedido}', [PedidoController::class, 'adminEstado'])->name('adm.pedidos-historico-estado');
 
     //metadatos
     Route::get('/admin/metadatos', [MetadatoController::class,'index'])->name('adm.metadatos');
@@ -161,6 +178,15 @@ Route::middleware(AdminAuth::class)->group(function () {
     Route::get('/admin/metadatos/editor/{metadato_id}', [MetadatoController::class,'show'])->name('adm.metadatos-editor');
     Route::post('/admin/metadatos/update', [MetadatoController::class,'update'])->name('adm.metadatos-update');
     Route::get('/admin/metadatos/destroy/{metadato_id}', [MetadatoController::class,'destroy'])->name('adm.metadatos-destroy');
+
+    //área clientes: clientes (se crean solo desde acá, sin registro público)
+    Route::get('/admin/clientes', [ClienteController::class, 'index'])->name('adm.clientes');
+    Route::get('/admin/clientes/creador', [ClienteController::class, 'create'])->name('adm.clientes-creador');
+    Route::post('/admin/clientes/store', [ClienteController::class, 'store'])->name('adm.clientes-store');
+    Route::get('/admin/clientes/editor/{id}', [ClienteController::class, 'show'])->name('adm.clientes-editor');
+    Route::post('/admin/clientes/update/{id}', [ClienteController::class, 'update'])->name('adm.clientes-update');
+    Route::get('/admin/clientes/destroy/{id}', [ClienteController::class, 'destroy'])->name('adm.clientes-destroy');
+    Route::get('/admin/clientes/switch/{id}', [ClienteController::class, 'switch'])->name('adm.clientes-switch');
 
     //banners (uno por sección: nosotros, novedades, contacto, productos, ...)
     Route::get('/admin/banner/{seccion}', [BannerController::class, 'show'])->name('adm.banner');
@@ -190,73 +216,76 @@ Route::post('/admin/forgot-password', [AuthController::class, 'forgotPassword'])
 // ============================================
 Route::post('/web/register', [AuthController::class, 'webRegister'])->name('web.register');
 Route::post('/web/login', [AuthController::class, 'webLogin'])->name('web.login');
-Route::post('/web/logout', [AuthController::class, 'webLogout'])->name('web.logout'); 
+Route::post('/web/logout', [AuthController::class, 'webLogout'])->name('web.logout');
 
-// ========== ZONA PRIVADA (requiere autenticación web_usuario) ==========
-Route::middleware('web.usuario.auth')->group(function () {
+// Ícono de usuario del header: login + registro de compradores (o "Mi cuenta" si ya inició sesión)
+Route::get('/mi-cuenta', function () {
+    return view('content.web.cuenta');
+})->name('web.cuenta');
 
-    Route::get('/clientes/productos', [ProductoBusquedaController::class, 'webProductos'])->name('web-productos');
+// ============================================
+// ÁREA CLIENTES (modal de login, sin registro: los crea el admin)
+// ============================================
+Route::post('/area-clientes/login', [AuthController::class, 'clienteLogin'])->middleware('throttle:10,1')->name('cliente.login');
+Route::post('/area-clientes/logout', [AuthController::class, 'clienteLogout'])->name('cliente.logout');
 
-    Route::get('/clientes/carrito', [PedidoController::class, 'index'])->name('web-carrito');
-
-    // Carrito API
-    Route::post('/web/carrito/agregar', [PedidoController::class, 'agregar'])->name('web-carrito.agregar');
-    Route::post('/web/carrito/actualizar', [PedidoController::class, 'actualizar'])->name('web-carrito.actualizar');
-    Route::post('/web/carrito/eliminar', [PedidoController::class, 'eliminar'])->name('web-carrito.eliminar');
-    Route::post('/web/carrito/vaciar', [PedidoController::class, 'vaciar'])->name('web-carrito.vaciar');
-    Route::post('/web/carrito/completar', [PedidoController::class, 'completar'])->name('web-carrito.completar');
-
-    Route::get('/clientes/informacion-pago', function () {
-        return view('content.web.webinfo');})->name('web-info');
-
-    Route::post('/info-pago/enviar', [InfoPagoController::class, 'enviar'])
-        ->name('info-pago.enviar');
-
-    Route::get('/clientes/pedidos', [PedidoController::class, 'historico'])->name('web-pedidos');
-    Route::get('/clientes/pedidos/{pedido}/pdf', [PedidoController::class, 'pdf'])->name('web-pedidos.pdf');
-    Route::post('/clientes/pedidos/{pedido}/recomprar', [PedidoController::class, 'recomprar'])->name('web-pedidos.recomprar');
-
-    Route::get('/clientes/lista', function () {
-        return view('content.web.weblista');
-    })->name('web-lista');
-
+Route::middleware('cliente.auth')->group(function () {
+    Route::get('/area-clientes/mis-productos/{producto?}', [AreaClientesController::class, 'productos'])->name('cliente.productos');
 });
 
+// ============================================
+// TIENDA: carrito y compra (requieren cuenta; sin sesión llevan a "Mi cuenta")
+// ============================================
+Route::middleware('web.usuario.auth')->group(function () {
+    Route::get('/carrito', [CarritoController::class, 'index'])->name('web-carrito');
+    Route::get('/carrito/mini', [CarritoController::class, 'mini'])->name('web-carrito.mini');
+    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('web-carrito.agregar');
+    Route::post('/carrito/actualizar', [CarritoController::class, 'actualizar'])->name('web-carrito.actualizar');
+    Route::post('/carrito/quitar', [CarritoController::class, 'quitar'])->name('web-carrito.quitar');
+    Route::post('/favoritos/{producto}', [CarritoController::class, 'favorito'])->name('web-favorito');
+
+    Route::get('/compra', [CompraController::class, 'checkout'])->name('compra');
+    Route::post('/compra', [CompraController::class, 'realizar'])->name('compra.realizar');
+    Route::get('/compra/{pedido}/confirmado', [CompraController::class, 'confirmado'])->name('compra.confirmado');
+    Route::get('/compra/{pedido}/mercado-pago', [CompraController::class, 'pagarMercadoPago'])->name('compra.mp.pagar');
+    Route::get('/compra/{pedido}/mercado-pago/retorno', [CompraController::class, 'retornoMercadoPago'])->name('compra.mp.retorno');
+    Route::post('/mi-cuenta/pedidos/{pedido}/cancelar', [CompraController::class, 'cancelar'])->name('pedido.cancelar');
+});
+
+// notificaciones de pagos de Mercado Pago (sin sesión ni CSRF, ver bootstrap/app.php)
+Route::post('/webhooks/mercadopago', [MercadoPagoController::class, 'webhook'])->name('mercadopago.webhook');
 
 Route::post('/admin/newsletter/store', [NewsletterController::class,'store'])->name('adm.newsletter-store');
 //WEB
 Route::get('/', function () {
     return view('content.web.home');})->name('home');
 
-Route::get('/nosotros', function () {
-    return view('content.web.nosotros');})->name('nosotros');
+// Páginas institucionales
+Route::get('/nosotros', [InstitucionalController::class, 'nosotros'])->name('nosotros');
+Route::get('/politica-de-privacidad', [InstitucionalController::class, 'privacidad'])->name('privacidad');
+Route::get('/aplicaciones', [InstitucionalController::class, 'aplicaciones'])->name('aplicaciones');
+Route::get('/nuestra-red', [InstitucionalController::class, 'nuestraRed'])->name('nuestra-red');
+Route::get('/soporte-tecnico', [InstitucionalController::class, 'soporte'])->name('soporte');
 
-Route::get('/productos', [ProductoBusquedaController::class, 'productos'])->name('productos');
+// Post Venta y sus formularios (solo mandan mail a Dixter)
+Route::get('/post-venta', [InstitucionalController::class, 'postVenta'])->name('post-venta');
+Route::get('/post-venta/registra-tu-producto', [InstitucionalController::class, 'registro'])->name('post-venta.registro');
+Route::post('/post-venta/registra-tu-producto', [InstitucionalController::class, 'enviarRegistro'])->middleware('throttle:5,1')->name('post-venta.registro.enviar');
+Route::get('/post-venta/buzon-de-sugerencias', [InstitucionalController::class, 'sugerencias'])->name('post-venta.sugerencias');
+Route::post('/post-venta/buzon-de-sugerencias', [InstitucionalController::class, 'enviarSugerencias'])->middleware('throttle:5,1')->name('post-venta.sugerencias.enviar');
+Route::get('/post-venta/arrepentimiento-de-compra', [InstitucionalController::class, 'arrepentimiento'])->name('post-venta.arrepentimiento');
+Route::post('/post-venta/arrepentimiento-de-compra', [InstitucionalController::class, 'enviarArrepentimiento'])->middleware('throttle:5,1')->name('post-venta.arrepentimiento.enviar');
 
-Route::get('/productos/marca/{id}', [ProductoBusquedaController::class, 'categoria'])->name('productos.categoria');
-
-// Producto detalle
-Route::get('/productos/detalle/{id}', function ($id) {
-    $producto = Producto::with('marca', 'fotos')->findOrFail($id);
-    $marcas = Marca::where('active', true)->orderBy('orden')->get();
-    $productos_ban = Banner::seccion('productos');
-    $related = Producto::where('marca_id', $producto->marca_id)
-        ->where('active', true)
-        ->where('id', '!=', $producto->id)
-        ->orderBy('orden')
-        ->limit(3)
-        ->get();
-
-    return view('content.web.productos-detalle', compact('producto', 'marcas', 'productos_ban', 'related'));
-})->name('productos.detalle');
+// Catálogo
+Route::get('/productos', [CatalogoController::class, 'index'])->name('productos');
+Route::get('/productos/{producto}', [CatalogoController::class, 'show'])->whereNumber('producto')->name('productos.detalle');
 
 Route::get('/novedades', function () {
     return view('content.web.novedade');})->name('novedades');
 
 Route::get('/novedades/detalle/{id}', [NovedadeController::class, 'detalle'])->name('novedades-detalle');
 
-Route::get('/contacto', function () {
-    return view('content.web.contacto');})->name('contacto'); 
+Route::get('/contacto', [InstitucionalController::class, 'contacto'])->name('contacto');
 
 
-Route::post('/contacto/enviar', [FormController::class, 'contacto'])->name('form.contacto');
+Route::post('/contacto/enviar', [FormController::class, 'contacto'])->middleware('throttle:5,1')->name('form.contacto');

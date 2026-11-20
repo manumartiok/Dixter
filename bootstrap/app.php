@@ -14,7 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registrar alias de middlewares
         $middleware->alias([
             'web.usuario.auth' => \App\Http\Middleware\WebUsuarioAuth::class,
+            'cliente.auth' => \App\Http\Middleware\ClienteAuth::class,
         ]);
+
+        // Mercado Pago no manda token CSRF en sus notificaciones
+        $middleware->validateCsrfTokens(except: ['webhooks/mercadopago']);
 
         // Idioma del sitio (config/sitio.php)
         $middleware->web(append: [

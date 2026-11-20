@@ -26,18 +26,6 @@
                        name="contactos_id" 
                        value="{{ $contacto->id ?? '' }}">
 
-                 {{-- CAMPOS SUPERIORES (1 COLUMNA) --}}
-                <div>
-
-                    {{-- Mapa --}}
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Mapa (iframe)</label>
-                        <input type="text" name="ubicacion" value="{{ $contacto->ubicacion ?? '' }}"
-                            class="w-full border border-gray-300 rounded px-4 py-2">
-                    </div>
-
-
-                </div>
 
 
                 {{-- COORDENADAS --}}
@@ -79,23 +67,7 @@
                                class="w-full border border-gray-300 rounded px-4 py-2">
                     </div>
 
-                    {{-- Mail secundario --}}
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Mail 2</label>
-                        <input type="email" 
-                               name="mail2" 
-                               value="{{ $contacto->mail2 ?? '' }}"
-                               class="w-full border border-gray-300 rounded px-4 py-2">
-                    </div>
 
-                    {{-- Mail terciario --}}
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Mail 3</label>
-                        <input type="email" 
-                               name="mail3" 
-                               value="{{ $contacto->mail3 ?? '' }}"
-                               class="w-full border border-gray-300 rounded px-4 py-2">
-                    </div>
 
                     {{-- Teléfono --}}
                     <div class="mb-4">
@@ -106,14 +78,6 @@
                                class="w-full border border-gray-300 rounded px-4 py-2">
                     </div>
 
-                    {{-- Teléfono secundario --}}
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">Teléfono 2</label>
-                        <input type="text" 
-                               name="telefono2" 
-                               value="{{ $contacto->telefono2 ?? '' }}"
-                               class="w-full border border-gray-300 rounded px-4 py-2">
-                    </div>
 
                     {{-- Instagram --}}
                     <div class="mb-4">
@@ -132,6 +96,16 @@
                             name="facebook"
                             value="{{ $contacto->facebook ?? '' }}"
                             placeholder="https://www.facebook.com/pagina"
+                            class="w-full border border-gray-300 rounded px-4 py-2">
+                    </div>
+
+                    {{-- YouTube --}}
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">YouTube</label>
+                        <input type="text"
+                            name="youtube"
+                            value="{{ $contacto->youtube ?? '' }}"
+                            placeholder="https://www.youtube.com/@canal"
                             class="w-full border border-gray-300 rounded px-4 py-2">
                     </div>
 

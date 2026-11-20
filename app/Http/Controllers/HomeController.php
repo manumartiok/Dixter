@@ -4,10 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Home;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
+/**
+ * Textos del Home. El hero se edita en "Home > Banner", las familias en
+ * "Home > Familias de productos", las industrias en "Home > Industrias"
+ * y el bloque Nosotros en "Nosotros > Contenido".
+ */
 class HomeController extends Controller
 {
+    private const CAMPOS = [
+        'soporte_etiqueta', 'soporte_titulo', 'soporte_texto',
+        'postventa_etiqueta', 'postventa_titulo', 'postventa_texto',
+        'familias_etiqueta', 'familias_titulo',
+        'lema', 'lema_destacado',
+        'sectores_etiqueta', 'sectores_titulo',
+    ];
+
     public function show()
     {
         $home = Home::first() ?? new Home();
@@ -17,58 +29,29 @@ class HomeController extends Controller
 
     public function update(Request $request)
     {
-        $request->validate([
-            'titulo1'            => 'nullable|string|max:255',
-            'foto1'              => 'nullable|image|max:2048',
-            'foto1_texto1'       => 'nullable|string|max:255',
-            'foto1_texto2'       => 'nullable|string|max:255',
-            'foto1_texto3'       => 'nullable|string|max:255',
-            'foto1_texto_boton'  => 'nullable|string|max:255',
-            'foto2'              => 'nullable|image|max:2048',
-            'titulo2'            => 'nullable|string|max:255',
-            'descripcion'        => 'nullable|string',
-            'titulo3'            => 'nullable|string|max:255',
-        ]);
+        $reglas = array_fill_keys(self::CAMPOS, 'nullable|string|max:255');
+        $reglas['soporte_texto'] = 'nullable|string|max:1000';
+        $reglas['postventa_texto'] = 'nullable|string|max:1000';
+        $reglas['beneficios'] = 'nullable|array|max:3';
+        $reglas['beneficios.*.destacado'] = 'nullable|string|max:255';
+        $reglas['beneficios.*.texto'] = 'nullable|string|max:255';
+
+        $request->validate($reglas);
 
         $home = Home::first() ?? new Home();
 
-        $home->titulo1           = $request->titulo1;
-        $home->foto1_texto1      = $request->foto1_texto1;
-        $home->foto1_texto2      = $request->foto1_texto2;
-        $home->foto1_texto3      = $request->foto1_texto3;
-        $home->foto1_texto_boton = $request->foto1_texto_boton;
-        $home->titulo2           = $request->titulo2;
-        $home->descripcion       = $request->descripcion;
-        $home->titulo3           = $request->titulo3;
-
-        if ($request->hasFile('foto1')) {
-            $this->handleImageUpload($home, $request->file('foto1'), 'foto1');
+        foreach (self::CAMPOS as $campo) {
+            $home->{$campo} = $request->input($campo);
         }
 
-        if ($request->hasFile('foto2')) {
-            $this->handleImageUpload($home, $request->file('foto2'), 'foto2');
-        }
+        // Los 3 beneficios tienen ícono animado fijo (técnicos, repuestos, respuesta): solo se editan los textos
+        $home->beneficios = collect(range(0, 2))->map(fn ($i) => [
+            'destacado' => $request->input("beneficios.{$i}.destacado"),
+            'texto' => $request->input("beneficios.{$i}.texto"),
+        ])->all();
 
         $home->save();
 
-        return redirect()
-            ->route('adm.home')
-            ->with('success', 'Página de inicio actualizada correctamente.');
-    }
-
-    private function handleImageUpload(Home $home, $file, string $field)
-    {
-        if ($home->$field) {
-            $oldPath = str_replace('/storage/', '', $home->$field);
-
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
-        $name = time() . '_' . $field . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('images', $name, 'public');
-
-        $home->$field = Storage::url($path);
+        return redirect()->route('adm.home')->with('success', 'Página de inicio actualizada correctamente.');
     }
 }

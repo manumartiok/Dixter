@@ -7,7 +7,7 @@
 {{-- cabezal  --}}
 <div class="flex items-center justify-between px-4 pt-4 pb-2">
     <div>
-        <h3 class="text-[20px] font-bold text-gray-500">Usuarios</h3>
+        <h3 class="text-[20px] font-bold text-gray-500">Tienda · Compradores</h3>
     </div>
 </div>
 <hr class="mx-6 mb-2">
@@ -23,7 +23,7 @@
                     type="text"
                     name="q"
                     value="{{ request('q') }}"
-                    placeholder="Buscar por usuario, email, empresa, localidad, provincia, CUIT, país, CP..."
+                    placeholder="Buscar por nombre, email, celular o empresa"
                     class="w-full max-w-xl border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                 <button type="submit"
@@ -42,13 +42,10 @@
         <table class="min-w-full border border-gray-200 bg-white">
             <thead class="bg-gray-100">
                 <tr class="text-gray-700 text-sm uppercase">
-                    <th class="px-4 py-3 text-left">Usuario</th>
+                    <th class="px-4 py-3 text-left">Nombre y apellido</th>
                     <th class="px-4 py-3 text-left">Email</th>
-                    <th class="px-4 py-3 text-left">Empresa</th>
-                    <th class="px-4 py-3 text-left">Localidad</th>
-                    <th class="px-4 py-3 text-left">Provincia</th>
-                    {{-- <th class="px-4 py-3 text-left">Rol</th>--}}
-                    <th class="px-4 py-3 text-left">Descuento</th> 
+                    <th class="px-4 py-3 text-left">Celular</th>
+                    <th class="px-4 py-3 text-left">Empresa / Razón social</th>
                     <th class="px-4 py-3 text-center">Activo</th>
                     <th class="px-4 py-3 text-center">Acciones</th>
                 </tr>
@@ -59,45 +56,8 @@
                 <tr class="border-t hover:bg-gray-50">
                     <td class="px-4 py-3">{{ $item->usuario }}</td>
                     <td class="px-4 py-3">{{ $item->email }}</td>
-                    <td class="px-4 py-3">{{ $item->empresa ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->localidad ?? '—' }}</td>
-                    <td class="px-4 py-3">{{ $item->provincia ?? '—' }}</td>
-                    {{-- <td class="px-4 py-3">
-                    
-                        @if($item->rol == 'cliente')
-                            <span class="badge bg-blue-400 text-white px-3 py-1 rounded text-xs">Cliente</span>
-                        @elseif($item->rol == 'mecanico')
-                            <span class="badge bg-purple-400 text-white px-3 py-1 rounded text-xs">Mecánico</span>
-                        @elseif($item->rol == 'profesional')
-                            <span class="badge bg-orange-400 text-white px-3 py-1 rounded text-xs">Profesional</span>
-                        @elseif($item->rol == 'revendedor')
-                            <span class="badge bg-teal-400 text-white px-3 py-1 rounded text-xs">Revendedor</span>
-                        @elseif($item->rol == 'usuario')
-                            <span class="badge bg-sky-400 text-white px-3 py-1 rounded text-xs">Usuario</span>
-                        @else
-                            <span class="badge bg-gray-400 text-white px-3 py-1 rounded text-xs">Sin asignar</span>
-                        @endif
-                    </td>--}}
-
-                    <td class="px-4 py-3">
-                        @php
-                            $descuentos = [];
-                            for ($i = 1; $i <= 5; $i++) {
-                                if (!is_null($item->{'descuento'.$i}) && $item->{'descuento'.$i} !== '') {
-                                    $descuentos[] = "D{$i} ({$item->{'descuento'.$i}}%)";
-                                }
-                            }
-                        @endphp
-                        @if(count($descuentos))
-                            <div class="flex flex-wrap gap-1">
-                                @foreach($descuentos as $desc)
-                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">{{ $desc }}</span>
-                                @endforeach
-                            </div>
-                        @else
-                            <span class="text-gray-400">—</span>
-                        @endif
-                    </td> 
+                    <td class="px-4 py-3">{{ $item->telefono ?: '—' }}</td>
+                    <td class="px-4 py-3">{{ $item->empresa ?: '—' }}</td>
                     <td class="px-4 py-3 text-center">
                         @if(Auth::user()->rol === 'Administrador')
                             <a href="{{ route('adm.web-usuarios-switch', $item->id) }}"
@@ -130,7 +90,7 @@
             <div class="flex items-center justify-between px-6 py-3 border-t bg-white text-sm text-gray-600">
                 <span>
                     Mostrando {{ $usuarios->firstItem() }}–{{ $usuarios->lastItem() }}
-                    de {{ $usuarios->total() }} usuarios
+                    de {{ $usuarios->total() }} compradores
                 </span>
                 <div class="flex gap-1">
                     @if($usuarios->onFirstPage())
@@ -196,7 +156,7 @@
         document.querySelectorAll('.js-delete-user').forEach(function(el){
             el.addEventListener('click', async function(e){
                 e.preventDefault();
-                if(!confirm('¿Confirma que desea borrar este usuario?')) return;
+                if(!confirm('¿Borrar este comprador?')) return;
                 const url = el.href;
                 const row = el.closest('tr');
                 el.classList.add('opacity-50', 'pointer-events-none');

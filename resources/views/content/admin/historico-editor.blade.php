@@ -12,11 +12,10 @@
 <div class="mx-20 pt-6" id="app">
     <div class="border rounded p-4 bg-white">
         <div>
-            <h3 class="text-[18px] font-semibold text-gray-600">Pedido #{{ str_pad($pedido->id, 8, '0', STR_PAD_LEFT) }}</h3>
-            @php($cliente = $pedido->cliente ?: $pedido->usuario)
+            <h3 class="text-[18px] font-semibold text-gray-600">Pedido {{ $pedido->numero() }}</h3>
             <p class="text-sm text-gray-500 mt-1">
-                {{ $cliente?->empresa ?: ($cliente?->usuario ?: 'Usuario eliminado') }}
-                @if($cliente?->email) - {{ $cliente->email }} @endif
+                {{ $pedido->created_at?->format('d/m/Y H:i') }} · {{ $pedido->nombre ?: ($pedido->usuario?->usuario ?? 'Usuario eliminado') }}
+                @if($pedido->email) - {{ $pedido->email }} @endif
             </p>
         </div>
         <hr class="my-3">
@@ -61,16 +60,44 @@
                         name="estado"
                         class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="en_preparacion" @selected(old('estado', $pedido->estado) === 'en_preparacion')>En preparacion</option>
-                        <option value="entregado" @selected(old('estado', $pedido->estado) === 'entregado')>Entregado</option>
-                        <option value="cancelado" @selected(old('estado', $pedido->estado) === 'cancelado')>Cancelado</option>
+                        @foreach (\App\Models\Pedido::ESTADOS as $valor => [$texto])
+                            <option value="{{ $valor }}" @selected(old('estado', $pedido->estado) === $valor)>{{ $texto }}</option>
+                        @endforeach
                     </select>
+                    <p class="text-xs text-gray-500 mt-1">Al guardar un cambio de estado se le envía el mail correspondiente al cliente (y a ventas si es Falló o Cancelado).</p>
+                </div>
+            </div>
+
+            {{-- Envío, pago y facturación --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-sm">
+                <div class="border rounded p-4">
+                    <span class="text-xs text-gray-400 uppercase">Envío</span>
+                    <p class="font-semibold">{{ $pedido->envio_texto }}</p>
+                    @if (!empty($pedido->entrega_otra))
+                        <p class="mt-2 text-gray-600">Enviar a: {{ collect($pedido->entrega_otra)->filter()->implode(', ') }}</p>
+                    @endif
+                </div>
+                <div class="border rounded p-4">
+                    <span class="text-xs text-gray-400 uppercase">Pago</span>
+                    <p class="font-semibold">{{ $pedido->pago_texto }}</p>
+                    @if ($pedido->pago_estado)
+                        <span class="inline-block mt-2 {{ $pedido->pago_estado_badge }} text-white text-xs px-2 py-1 rounded">{{ $pedido->pago_estado_texto }}</span>
+                        @if ($pedido->mp_payment_id)<p class="mt-1 text-gray-500">Pago MP #{{ $pedido->mp_payment_id }}</p>@endif
+                    @endif
+                </div>
+                <div class="border rounded p-4">
+                    <span class="text-xs text-gray-400 uppercase">Facturación</span>
+                    <p class="font-semibold">{{ $pedido->nombre }}</p>
+                    <p class="text-gray-600">DNI {{ $pedido->dni }} · CUIT/CUIL {{ $pedido->cuit }}</p>
+                    @if ($pedido->razon_social)<p class="text-gray-600">{{ $pedido->razon_social }}</p>@endif
+                    <p class="text-gray-600">{{ $pedido->celular }}</p>
+                    <p class="text-gray-600">{{ $pedido->direccion }}, {{ $pedido->localidad }}, {{ $pedido->provincia }} ({{ $pedido->codigo_postal }})</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div class="border rounded p-4">
-                    <span class="text-xs text-gray-400 uppercase">Subtotal</span>
+                    <span class="text-xs text-gray-400 uppercase">Subtotal sin IVA</span>
                     <p class="text-lg font-semibold">$ {{ number_format($pedido->subtotal, 2, ',', '.') }}</p>
                 </div>
                 <div class="border rounded p-4">
@@ -100,7 +127,7 @@
                             @foreach($pedido->items as $item)
                                 <tr class="border-t">
                                     <td class="px-3 py-2">{{ $item->codigo ?: '-' }}</td>
-                                    <td class="px-3 py-2">{{ $item->nombre ?: '-' }} {{ $item->seccion ?: '' }}</td>
+                                    <td class="px-3 py-2">{{ $item->nombre ?: '-' }}</td>
                                     <td class="px-3 py-2 text-right">{{ number_format($item->cantidad, 0, ',', '.') }}</td>
                                     <td class="px-3 py-2 text-right">$ {{ number_format($item->precio_con_descuento, 2, ',', '.') }}</td>
                                     <td class="px-3 py-2 text-right">$ {{ number_format($item->subtotal, 2, ',', '.') }}</td>
@@ -113,7 +140,7 @@
 
             @if($pedido->mensaje)
                 <div class="mt-6">
-                    <h4 class="font-semibold text-gray-700 mb-2">Mensaje del cliente</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2">Observaciones / aclaraciones</h4>
                     <p class="border rounded p-3 text-sm text-gray-600">{{ $pedido->mensaje }}</p>
                 </div>
             @endif

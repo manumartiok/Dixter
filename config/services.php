@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    // Checkout Pro de Mercado Pago (misma integración que BBS)
+    'mercadopago' => [
+        'public_key' => env('MP_PUBLIC_KEY'),
+        'access_token' => env('MP_ACCESS_TOKEN'),
+        // clave secreta del webhook (panel de la aplicación > Webhooks); vacía no valida la firma
+        'webhook_secret' => env('MP_WEBHOOK_SECRET'),
+        // Pruebas con cuentas de prueba de Mercado Pago: no se manda el mail del cliente como pagador,
+        // así el checkout deja ingresar con el comprador de prueba (o se usa MP_PAGADOR_PRUEBA si está cargado)
+        'modo_prueba' => (bool) env('MP_MODO_PRUEBA', false),
+        'pagador_prueba' => env('MP_PAGADOR_PRUEBA'),
+    ],
+
 ];

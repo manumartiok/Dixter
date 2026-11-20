@@ -11,90 +11,58 @@
     </div>
     
     {{-- Formulario --}}
-    <div class="mx-20 pt-6" id="app">
-        <div class="border border-rounded p-4">
+    <div class="mx-20 pt-6">
+        <div class="border border-rounded p-4 bg-white">
             <div>
                 <h3 class="text-[18px] font-semibold text-gray-600">Editar producto</h3>
             </div>
             <hr class="my-3">
-            
-            <form method="POST"
-                  action="{{ route('adm.producto-update') }}"
-                  enctype="multipart/form-data"
-                  @submit.prevent="handleSubmit">
+
+            @if ($errors->any())
+                <div class="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
+            @endif
+
+            <form method="POST" action="{{ route('adm.producto-update') }}" enctype="multipart/form-data">
                 @csrf
 
                 <input type="hidden" name="producto_id" value="{{ $producto->id ?? '' }}">
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Marca</label>
-                    <select name="marca_id" class="w-full border border-gray-300 rounded px-4 py-2">
-                        <option value="">-- Seleccionar --</option>
-                        @foreach($marcas as $marca)
-                            <option value="{{ $marca->id }}" {{ ($producto->marca_id ?? '') == $marca->id ? 'selected' : '' }}>{{ $marca->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
                 {{-- Foto --}}
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">
-                        Foto (recomendado 510x400) / (2MB máximo)
-                    </label>
-
-                    @if (!empty($producto->foto))
-                        <img :src="foto.foto || '{{ $producto->foto }}'"
-                             class="mb-3 w-full max-w-[510px] h-[400px] object-cover rounded">
-                    @else
-                        <img :src="foto.foto || ''"
-                             v-if="foto.foto"
-                             class="mb-3 w-full max-w-[510px] h-[400px] object-cover rounded">
-                    @endif
-
-                    <input type="file" name="foto" @change="subirFoto"
+                <div class="mb-4 campo-archivo">
+                    <label class="block text-gray-700 font-medium mb-2">Foto principal (cuadrada, recomendado 1000x1000) / (2MB máximo)</label>
+                    <img src="{{ $producto->foto }}" alt=""
+                         class="vista-previa mb-3 w-[240px] h-[240px] object-contain rounded border {{ empty($producto->foto) ? 'hidden' : '' }}">
+                    <input type="file" name="foto" accept="image/*" onchange="previsualizarImagen(this)"
                            class="w-full border border-gray-300 rounded px-4 py-2">
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Archivo actual</label>
+                    <label class="block text-gray-700 font-medium mb-2">Ficha técnica (PDF, opcional)</label>
                     @if (!empty($producto->archivo))
-                        <div class="mb-2">
+                        <div class="mb-2 flex gap-4">
                             <a href="{{ asset($producto->archivo) }}" target="_blank" class="text-blue-600 underline">Ver archivo</a>
-                        </div>
-                        <div class="mb-2">
-                            <a href="{{ route('adm.producto-delete-archivo', $producto->id) }}" class="text-red-600 hover:underline" onclick="return confirm('Eliminar archivo?')">Eliminar archivo</a>
+                            <a href="{{ route('adm.producto-delete-archivo', $producto->id) }}" class="text-red-600 hover:underline" onclick="return confirm('¿Eliminar archivo?')">Eliminar archivo</a>
                         </div>
                     @endif
-                    <label class="block text-gray-700 font-medium mb-2">Reemplazar archivo (opcional)</label>
-                    <input type="file" name="archivo"
-                           class="w-full border border-gray-300 rounded px-4 py-2">
+                    <input type="file" name="archivo" class="w-full border border-gray-300 rounded px-4 py-2">
                 </div>
 
-                {{-- Orden --}}
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Orden</label>
-                    <input type="text" name="orden" value="{{ $producto->orden ?? '' }}"
-                           class="w-full border border-gray-300 rounded px-4 py-2">
+                <div class="grid grid-cols-1 md:grid-cols-[120px_160px_1fr] gap-4">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Orden</label>
+                        <input type="text" name="orden" value="{{ $producto->orden ?? '' }}" class="w-full border border-gray-300 rounded px-4 py-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Código / SKU</label>
+                        <input type="text" name="codigo" value="{{ $producto->codigo ?? '' }}" class="w-full border border-gray-300 rounded px-4 py-2">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Nombre</label>
+                        <input type="text" name="nombre" value="{{ $producto->nombre ?? '' }}" class="w-full border border-gray-300 rounded px-4 py-2">
+                    </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Código</label>
-                    <input type="text" name="codigo" value="{{ $producto->codigo ?? '' }}"
-                           class="w-full border border-gray-300 rounded px-4 py-2">
-                </div>
-
-                {{-- Nombre --}}
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Nombre</label>
-                    <input type="text" name="nombre" value="{{ $producto->nombre ?? '' }}"
-                           class="w-full border border-gray-300 rounded px-4 py-2">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Precio</label>
-                    <input type="number" step="0.01" name="precio" value="{{ $producto->precio ?? '' }}"
-                           class="w-full border border-gray-300 rounded px-4 py-2">
-                </div>
+                @include('content.admin.partials.producto-catalogo')
 
                 <div class="mb-4">
                     <label class="inline-flex items-center">
@@ -173,35 +141,7 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        if (document.getElementById('app')) {
-            new Vue({
-                el: '#app',
-                data: {
-                    foto: {
-                        foto: ''
-                    }
-                },
-                methods: {
-                    subirFoto: function(event) {
-                        let file = event.target.files[0];
-                        if (file) {
-                            let reader = new FileReader();
-                            reader.onload = (e) => {
-                                this.foto.foto = e.target.result;
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    },
-                    handleSubmit: function() {
-                        this.$el.querySelector('form').submit();
-                    }
-                }
-            });
-        }
-    });
-</script>
+    @include('includes.ckeditor-init')
 @endpush
 
 @push('scripts')

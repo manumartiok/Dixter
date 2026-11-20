@@ -7,9 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\Marca;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ProductoFoto;
+use App\Http\Controllers\Concerns\GestionaArchivos;
 
 class ProductoController extends Controller
 {
+    use GestionaArchivos;
+
+    /** Material público del detalle (listas repetibles de make:modulo) */
+    private const LISTA_NOMBRE_VALOR = ['nombre' => 'string', 'valor' => 'string'];
+    private const LISTA_INSTRUCTIVOS = ['titulo' => 'string', 'archivo' => 'archivo'];
+    private const LISTA_VIDEOS_WEB = ['titulo' => 'string', 'archivo' => 'video'];
+
     /**
      * Display a listing of the resource.
      */
@@ -63,7 +71,7 @@ class ProductoController extends Controller
 
         $producto = new Producto();
 
-        $producto->marca_id = $request->marca_id;
+        $producto->categoria_id = $request->categoria_id ?: null;
         $producto->orden = $request->orden;
         $producto->codigo = $request->codigo;
         $producto->nombre = $request->nombre;
@@ -126,15 +134,34 @@ class ProductoController extends Controller
             'archivo' => 'nullable|file|max:5120',
             'codigo' => 'nullable|string|max:255',
             'precio' => 'nullable|numeric',
+            'precio_anterior' => 'nullable|numeric|min:0',
+            'iva' => ['required', \Illuminate\Validation\Rule::in(Producto::IVAS)],
+            'categoria_id' => 'nullable|exists:categorias,id',
+            'descripcion' => 'nullable|string',
+            'instructivos.*.archivo' => 'nullable|file|max:10240',
+            'videos_web.*.archivo' => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime|max:204800',
+        ], [
+            'videos_web.*.archivo.mimetypes' => 'Los videos tienen que ser MP4, WebM o MOV.',
+            'videos_web.*.archivo.max' => 'Cada video puede pesar hasta 200 MB.',
         ]);
 
         $producto = Producto::find($request->producto_id) ?? new Producto();
 
-        $producto->marca_id = $request->marca_id;
+        $producto->categoria_id = $request->categoria_id;
         $producto->orden = $request->orden;
         $producto->codigo = $request->codigo;
         $producto->nombre = $request->nombre;
         $producto->precio = $request->precio;
+        $producto->precio_anterior = $request->precio_anterior;
+        $producto->iva = $request->iva;
+        $producto->descripcion = $request->descripcion;
+
+        // Pestañas públicas del detalle (las filas vacías se descartan)
+        $sinVacias = fn (array $filas, string $clave) => array_values(array_filter($filas, fn ($f) => filled($f[$clave] ?? null)));
+        $producto->ficha = $sinVacias($this->procesarLista($request, 'ficha', self::LISTA_NOMBRE_VALOR, $producto->ficha, 'productos'), 'nombre');
+        $producto->informacion = $sinVacias($this->procesarLista($request, 'informacion', self::LISTA_NOMBRE_VALOR, $producto->informacion, 'productos'), 'nombre');
+        $producto->instructivos = $sinVacias($this->procesarLista($request, 'instructivos', self::LISTA_INSTRUCTIVOS, $producto->instructivos, 'productos/instructivos'), 'archivo');
+        $producto->videos_web = $sinVacias($this->procesarLista($request, 'videos_web', self::LISTA_VIDEOS_WEB, $producto->videos_web, 'productos/videos'), 'archivo');
 
         $producto->destacado = $request->has('destacado') ? (bool)$request->destacado : $producto->destacado;
 

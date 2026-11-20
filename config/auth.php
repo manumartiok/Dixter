@@ -40,11 +40,17 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Login público (ícono de usuario): compradores con registro
         'web_usuario' => [
-        'driver' => 'session',
-        'provider' => 'web_usuarios',
-    ],
-        
+            'driver' => 'session',
+            'provider' => 'web_usuarios',
+        ],
+
+        // Área clientes (modal): solo usuarios creados desde el admin
+        'cliente' => [
+            'driver' => 'session',
+            'provider' => 'clientes',
+        ],
     ],
 
     /*
@@ -73,6 +79,11 @@ return [
         'web_usuarios' => [
             'driver' => 'eloquent',
             'model' => App\Models\WebUsuario::class,
+        ],
+
+        'clientes' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Cliente::class,
         ],
 
         // 'users' => [

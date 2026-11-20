@@ -30,7 +30,6 @@ class DatabaseSeeder extends Seeder
             'usuario' => 'prueba',
             'contraseña' => Hash::make('12345678'),
             'email' => 'prueba@prueba.com',
-            'descuento1' => 10,
             'active' => true,
         ]);
 
@@ -46,5 +45,8 @@ class DatabaseSeeder extends Seeder
             'precio' => '1000',
             'active' => true,
         ]);
+
+        // Contenido de Dixter 2.0 (home, familias, industrias, cliente de prueba del Área clientes)
+        $this->call(DixterSeeder::class);
     }
 }

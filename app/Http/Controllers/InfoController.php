@@ -5,45 +5,37 @@ namespace App\Http\Controllers;
 use App\Models\Info;
 use Illuminate\Http\Request;
 
+/**
+ * Admin: textos que se muestran en el carrito, la compra y el detalle del producto,
+ * el texto completo de la Política de privacidad (/politica-de-privacidad)
+ * y las casillas que reciben los avisos de pedidos.
+ */
 class InfoController extends Controller
 {
-    /**
-     * Mostrar la información (si no existe, crea una instancia vacía)
-     */
-    public function show($info_id = null)
-    {
-        $info = Info::first() ?? new Info();
+    private const CAMPOS = ['retiro_texto', 'pago_local_texto', 'cuotas_texto', 'privacidad', 'mail_ventas', 'mail_ventas_cc'];
 
-        return view('content.admin.info', [
-            'info' => $info
-        ]);
+    public function show()
+    {
+        return view('content.admin.info', ['info' => Info::first() ?? new Info()]);
     }
 
-    /**
-     * Crear o actualizar la información
-     */
     public function update(Request $request)
     {
-        // Validación solo de texto
         $request->validate([
-            'texto1'    => 'nullable|string',
-            'condicion' => 'nullable|string',
-            'texto2'    => 'nullable|string',
+            'retiro_texto' => 'nullable|string|max:2000',
+            'pago_local_texto' => 'nullable|string|max:2000',
+            'cuotas_texto' => 'nullable|string|max:2000',
+            'privacidad' => 'nullable|string', // longText: sin límite práctico
+            'mail_ventas' => 'nullable|email|max:255',
+            'mail_ventas_cc' => 'nullable|email|max:255',
         ]);
 
-        // Obtener el primer registro o crear uno nuevo
         $info = Info::first() ?? new Info();
-
-        // Asignar campos
-        $info->texto1    = $request->input('texto1');
-        $info->condicion = $request->input('condicion');
-        $info->texto2    = $request->input('texto2');
-
-        // Guardar
+        foreach (self::CAMPOS as $campo) {
+            $info->{$campo} = $request->input($campo);
+        }
         $info->save();
 
-        return redirect()
-            ->route('adm.info')
-            ->with('success', 'Información actualizada correctamente.');
+        return redirect()->route('adm.info')->with('success', 'Información actualizada correctamente.');
     }
 }

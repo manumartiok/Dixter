@@ -40,13 +40,14 @@
                 @endif
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Marca</label>
-                    <select name="marca_id" class="w-full border border-gray-300 rounded px-4 py-2">
-                        <option value="">-- Seleccionar --</option>
-                        @foreach($marcas as $marca)
-                            <option value="{{ $marca->id }}" {{ old('marca_id') == $marca->id ? 'selected' : '' }}>{{ $marca->nombre }}</option>
+                    <label class="block text-gray-700 font-medium mb-2">Categoría</label>
+                    <select name="categoria_id" class="w-full border border-gray-300 rounded px-4 py-2">
+                        <option value="">-- Sin categoría --</option>
+                        @foreach(\App\Models\Categoria::opcionesParaSelect() as $id => $nombre)
+                            <option value="{{ $id }}" @selected(old('categoria_id') == $id)>{{ $nombre }}</option>
                         @endforeach
                     </select>
+                    <p class="text-sm text-gray-500 mt-1">Después de crear el producto se completan los precios, el IVA, la descripción y las pestañas.</p>
                 </div>
 
                 <div class="mb-4">

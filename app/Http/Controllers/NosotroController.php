@@ -23,11 +23,11 @@ class NosotroController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'video' => 'nullable|mimetypes:video/mp4,video/webm,video/ogg|max:51200', // hasta 50 MB aprox
             'foto'   => 'nullable|image|max:2048',
             'icono1' => 'nullable|image|max:2048',
             'icono2' => 'nullable|image|max:2048',
             'icono3' => 'nullable|image|max:2048',
+            'icono4' => 'nullable|image|max:2048',
         ]);
 
         // Obtener o crear registro
@@ -40,24 +40,21 @@ class NosotroController extends Controller
         $nosotros->descripcion   = $request->input('descripcion');
         $nosotros->texto2        = $request->input('texto2');
 
-        $nosotros->nombre_icono1 = $request->input('nombre_icono1');
-        $nosotros->texto_icono1  = $request->input('texto_icono1');
-
-        $nosotros->nombre_icono2 = $request->input('nombre_icono2');
-        $nosotros->texto_icono2  = $request->input('texto_icono2');
-
-        $nosotros->nombre_icono3 = $request->input('nombre_icono3');
-        $nosotros->texto_icono3  = $request->input('texto_icono3');
+        // Logos 1 a 4: las tarjetas de "¿Por qué elegirnos?" en la web
+        foreach ([1, 2, 3, 4] as $n) {
+            $nosotros->{"nombre_icono{$n}"} = $request->input("nombre_icono{$n}");
+            $nosotros->{"texto_icono{$n}"}  = $request->input("texto_icono{$n}");
+        }
 
         // ============================
         // ARCHIVOS (FOTO + ICONOS)
         // ============================
         $archivos = [
-            'video' => 'videos',
             'foto'   => 'images',
             'icono1' => 'images',
             'icono2' => 'images',
             'icono3' => 'images',
+            'icono4' => 'images',
         ];
 
         foreach ($archivos as $campo => $carpeta) {

@@ -24,6 +24,7 @@ class PedidoItem extends Model
         'metros',
         'precio_base',
         'precio_con_descuento',
+        'iva',
         'subtotal',
         'carrito_item',
     ];
@@ -36,6 +37,7 @@ class PedidoItem extends Model
         'metros' => 'float',
         'precio_base' => 'float',
         'precio_con_descuento' => 'float',
+        'iva' => 'float',
         'subtotal' => 'float',
         'carrito_item' => 'array',
     ];
@@ -43,5 +45,10 @@ class PedidoItem extends Model
     public function pedido()
     {
         return $this->belongsTo(Pedido::class);
+    }
+
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class);
     }
 }

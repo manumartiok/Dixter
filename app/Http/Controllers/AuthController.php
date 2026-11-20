@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Usuario;
 use App\Models\WebUsuario;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -127,9 +128,8 @@ class AuthController extends Controller
         Auth::guard('web_usuario')->login($usuario);
         $request->session()->regenerate();
 
-            // Obtener la URL a la que intentaba acceder o usar ruta por defecto
-    $intendedUrl = session('intended_url', route('web-productos'));
-    session()->forget('intended_url'); // Limpiar la sesión
+        // Volver a donde estaba (p. ej. el carrito) o a "Mi cuenta"
+        $intendedUrl = session()->pull('intended_url', route('web.cuenta'));
 
     return response()->json([
         'success' => true,
@@ -167,8 +167,12 @@ class AuthController extends Controller
             'codigo_postal'=> $request->codigo_postal,
             'localidad'    => $request->localidad,
             'provincia'    => $request->provincia,
-            // 'pais'         => $request->pais,   
+            // Compradores públicos: la cuenta queda activa al registrarse
+            'active'       => true,
         ]);
+
+        Auth::guard('web_usuario')->login($usuario);
+        $request->session()->regenerate();
 
 
         // Después de crear el usuario, antes del return
@@ -195,17 +199,67 @@ try {
 
         return response()->json([
             'success' => true,
-            'message' => 'Registro exitoso, esperar confirmacion del administrador',
-            'redirect' => route('home')
+            'message' => '¡Bienvenido! Tu cuenta fue creada.',
+            'redirect' => session()->pull('intended_url', route('web.cuenta'))
         ]);
     }
 
     public function webLogout(Request $request)
     {
         Auth::guard('web_usuario')->logout();
-        $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('home')->with('message', 'Has cerrado sesión correctamente');
+    }
+
+    // ============================================
+    // ÁREA CLIENTES (modal, sin registro)
+    // ============================================
+
+    public function clienteLogin(Request $request)
+    {
+        $request->validate([
+            'usuario' => 'required|string',
+            'contraseña' => 'required|string',
+        ], [
+            'usuario.required' => 'Ingresá tu nombre o mail.',
+            'contraseña.required' => 'Ingresá tu contraseña.',
+        ]);
+
+        $ingreso = trim($request->usuario);
+        $cliente = Cliente::where('usuario', $ingreso)
+            ->orWhere('email', $ingreso)
+            ->orWhere('nombre', $ingreso)
+            ->get()
+            ->first(fn ($c) => Hash::check($request->contraseña, $c->contraseña));
+
+        if (!$cliente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El nombre, mail o contraseña no son correctos.',
+            ], 422);
+        }
+
+        if (!$cliente->active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu cuenta está inactiva. Contactate con Dixter.',
+            ], 422);
+        }
+
+        Auth::guard('cliente')->login($cliente);
+        $request->session()->regenerate();
+
+        $redirect = session()->pull('cliente_intended_url', route('cliente.productos'));
+
+        return response()->json(['success' => true, 'redirect' => $redirect]);
+    }
+
+    public function clienteLogout(Request $request)
+    {
+        Auth::guard('cliente')->logout();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('home');
     }
 }

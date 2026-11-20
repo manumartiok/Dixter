@@ -53,32 +53,20 @@
 
             <tbody class="text-gray-600">
                 @forelse($pedidos as $pedido)
-                    @php
-                        $cliente = $pedido->cliente ?: $pedido->usuario;
-                        $estadoTexto = [
-                            'en_preparacion' => 'En preparacion',
-                            'entregado' => 'Entregado',
-                            'cancelado' => 'Cancelado',
-                        ][$pedido->estado] ?? ucfirst(str_replace('_', ' ', $pedido->estado));
 
-                        $estadoClass = [
-                            'en_preparacion' => 'bg-yellow-400',
-                            'entregado' => 'bg-green-500',
-                            'cancelado' => 'bg-red-500',
-                        ][$pedido->estado] ?? 'bg-gray-400';
-                    @endphp
                     <tr class="border-t hover:bg-gray-50">
-                        <td class="px-4 py-3 font-mono text-sm">#{{ str_pad($pedido->id, 8, '0', STR_PAD_LEFT) }}</td>
+                        <td class="px-4 py-3 font-mono text-sm">{{ $pedido->numero() }}</td>
                         <td class="px-4 py-3">
                             <div class="flex flex-col">
                                 <span class="font-medium text-gray-800">
-                                    {{ $cliente?->empresa ?: ($cliente?->usuario ?: 'Usuario eliminado') }}
+                                    {{ $pedido->razon_social ?: ($pedido->nombre ?: ($pedido->usuario?->usuario ?? 'Usuario eliminado')) }}
                                 </span>
-                                @if($cliente?->email)
-                                    <span class="text-xs text-gray-400">{{ $cliente->email }}</span>
+                                @if($pedido->email)
+                                    <span class="text-xs text-gray-400">{{ $pedido->email }}</span>
                                 @endif
-                                @if($cliente?->cuit)
-                                    <span class="text-xs text-gray-400">CUIT: {{ $cliente->cuit }}</span>
+                                <span class="text-xs text-gray-400">{{ $pedido->envio_texto }} · {{ $pedido->pago_texto }}</span>
+                                @if($pedido->pago_estado)
+                                    <span class="mt-1 w-fit {{ $pedido->pago_estado_badge }} text-white text-[11px] px-2 py-0.5 rounded">{{ $pedido->pago_estado_texto }}</span>
                                 @endif
                             </div>
                         </td>
@@ -87,10 +75,17 @@
                         <td class="px-4 py-3">{{ $pedido->items->count() }}</td>
                         <td class="px-4 py-3 font-semibold">$ {{ number_format($pedido->total, 2, ',', '.') }}</td>
                         <td class="px-4 py-3 text-center">
-                            <a href="{{ route('adm.pedidos-historico-switch', $pedido) }}"
-                               class="badge {{ $estadoClass }} text-white px-4 py-2 rounded hover:opacity-90 transition">
-                                {{ $estadoTexto }}
-                            </a>
+                            <form method="POST" action="{{ route('adm.pedidos-historico-estado', $pedido) }}">
+                                @csrf
+                                <select name="estado" data-anterior="{{ $pedido->estado }}"
+                                        onchange="if (confirm('¿Cambiar el pedido {{ $pedido->numero() }} a «' + this.options[this.selectedIndex].text + '»? Se le enviará el mail al cliente.')) { this.form.submit(); } else { this.value = this.dataset.anterior; }"
+                                        aria-label="Estado del pedido {{ $pedido->numero() }}"
+                                        class="{{ $pedido->estado_badge }} cursor-pointer rounded px-3 py-2 text-sm font-semibold text-white focus:outline-none">
+                                    @foreach (\App\Models\Pedido::ESTADOS as $valor => [$texto])
+                                        <option value="{{ $valor }}" class="bg-white text-gray-800" @selected($pedido->estado === $valor)>{{ $texto }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
                         </td>
                         <td class="px-4 py-3 text-center space-x-2 font-bold">
                             <a href="{{ route('adm.pedidos-historico-editor', $pedido) }}" class="text-blue-600 hover:underline">Editar</a>
